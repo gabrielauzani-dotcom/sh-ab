@@ -1,0 +1,50 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Site {
+  id          String       @id @default(cuid())
+  domain      String       @unique
+  name        String
+  experiments Experiment[]
+  createdAt   DateTime     @default(now())
+}
+
+model Experiment {
+  id                  String         @id @default(cuid())
+  name                String
+  siteId              String
+  site                Site           @relation(fields: [siteId], references: [id])
+  targetUrl           String         @default("")
+  urlCondition        String         @default("")
+  goalSelector        String         @default("")
+  trafficDistribution Int            @default(50)
+  status              String         @default("DRAFT")
+  modifications       Modification[]
+  events              TrackEvent[]
+  createdAt           DateTime       @default(now())
+}
+
+model TrackEvent {
+  id           String     @id @default(cuid())
+  experimentId String
+  experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  variant      String     // "A" or "B"
+  type         String     // "view" or "click"
+  sessionId    String
+  createdAt    DateTime   @default(now())
+}
+
+model Modification {
+  id             String     @id @default(cuid())
+  experimentId   String
+  experiment     Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  targetSelector String
+  type           String     // TEXT, CSS, INSERT_HTML_BEFORE, INSERT_HTML_AFTER
+  value          String     // Valor salvo, ex: cor em hex, ou string html
+}
